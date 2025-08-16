@@ -7,26 +7,42 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-  <h1>Select Valve</h1>
-  <p class="sub">Choose the valve to generate FG code:</p>
-  <div class="grid" id="valveList"></div>
+<div class="container center">
+  <header class="header">
+    <h1>Select Valve</h1>
+    <p class="sub">Choose the valve type to generate FG code</p>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+  </header>
+
+  <div class="grid landing-grid" id="valveList"></div>
 </div>
 
 <script>
-const VALVES = ["Gate_Valve", "Globe_Valve", "Check_Valve"]; // Add more valves
+const VALVES = ["Gate_Valve", "Globe_Valve", "Check_Valve"]; 
 const valveList = document.getElementById("valveList");
 
 VALVES.forEach(v => {
   const btn = document.createElement("button");
-  btn.className = "btn";
-  btn.textContent = v;
+  btn.className = "btn big-btn";
+  btn.textContent = v.replace("_"," ");
   btn.onclick = () => {
     localStorage.setItem("selectedValve", v);
-    window.location.href = "fg-generator.html"; // Go to generator page
+    window.location.href = "fg-generator.html";
   };
   valveList.appendChild(btn);
 });
+
+// THEME HANDLING
+function toggleTheme(){
+  const current = document.documentElement.dataset.theme || "light";
+  const next = current === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem("theme", next);
+}
+(function(){
+  const saved = localStorage.getItem("theme") || "light";
+  document.documentElement.dataset.theme = saved;
+})();
 </script>
 </body>
 </html>
