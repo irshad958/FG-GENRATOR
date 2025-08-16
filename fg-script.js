@@ -2,9 +2,6 @@
 const selectedValve = localStorage.getItem("selectedValve") || "Gate_Valve"; // default if none selected
 document.getElementById("selectedValveTitle").textContent = `Valve: ${selectedValve}`;
 
-// Optional: clear selection after reading
-// localStorage.removeItem("selectedValve");
-
 // Google Sheet URL
 const SHEET_ID   = "1jvStP_Hoz-3Xu5t0Il1OjUoxkU9GZjDbjzMsRnL31gU";
 const SHEET_NAME = selectedValve + "_MasterData"; // e.g., Gate_Valve_MasterData
@@ -61,35 +58,26 @@ function buildUI(){
   selections = {};
   FIELDS.forEach((f, idx) => {
     const wrap = document.createElement("div");
-    wrap.className = "field";
+    wrap.className = "field two-col";
     wrap.dataset.index = idx;
 
     const label = document.createElement("div");
     label.className = "label";
     label.textContent = f.key;
 
-    const combo = document.createElement("div");
-    combo.className = "combo";
+    const row = document.createElement("div");
+    row.className = "combo-row";
 
-    const btn = document.createElement("button");
-    btn.type="button";
-    btn.className = "combo-btn";
-    btn.innerHTML = `<span class="val placeholder">Select ${f.key}…</span><span>▾</span>`;
-    btn.addEventListener("click", () => togglePanel(combo, true));
+    // Attribute dropdown
+    const attrCombo = createCombo(idx, f.key, "attr");
+    row.appendChild(attrCombo);
 
-    const panel = document.createElement("div");
-    panel.className = "combo-panel";
-    panel.innerHTML = `
-      <div class="panel-head">
-        <input type="text" class="search" placeholder="Search ${f.key}…">
-      </div>
-      <div class="options"></div>
-    `;
+    // Code dropdown
+    const codeCombo = createCombo(idx, f.code, "code");
+    row.appendChild(codeCombo);
 
-    combo.appendChild(btn);
-    combo.appendChild(panel);
     wrap.appendChild(label);
-    wrap.appendChild(combo);
+    wrap.appendChild(row);
 
     const tools = document.createElement("div");
     tools.className = "row-actions";
@@ -102,32 +90,58 @@ function buildUI(){
     wrap.appendChild(tools);
 
     host.appendChild(wrap);
-
-    const search = panel.querySelector(".search");
-    search.addEventListener("input", () => filterOptionsList(idx, search.value));
-    document.addEventListener("click",(e)=>{ if(!combo.contains(e.target)) togglePanel(combo,false); });
   });
 
   byId("resetAll").onclick = ()=>clearFromIndex(0);
   byId("copyBtn").onclick  = copyCode;
 }
 
-// Functions for dropdowns, filtering, selections
+function createCombo(fieldIndex, colName, type){
+  const combo = document.createElement("div");
+  combo.className = "combo";
+
+  const btn = document.createElement("button");
+  btn.type="button";
+  btn.className="combo-btn";
+  btn.innerHTML = `<span class="val placeholder">Select ${colName}…</span><span>▾</span>`;
+  combo.appendChild(btn);
+
+  const panel = document.createElement("div");
+  panel.className = "combo-panel";
+  panel.innerHTML = `
+    <div class="panel-head">
+      <input type="text" class="search" placeholder="Search ${colName}…">
+    </div>
+    <div class="options"></div>
+  `;
+  combo.appendChild(panel);
+
+  btn.addEventListener("click", () => togglePanel(combo,true));
+  document.addEventListener("click",(e)=>{ if(!combo.contains(e.target)) togglePanel(combo,false); });
+
+  const search = panel.querySelector(".search");
+  search.addEventListener("input", () => renderOptions(fieldIndex, colName, type, search.value));
+
+  return combo;
+}
+
 function togglePanel(combo, open){
   combo.classList.toggle("open", open);
   if(open) combo.querySelector(".search").focus();
 }
 
-function optionsForField(fieldIndex){
-  const key = FIELDS[fieldIndex].key;
-  return uniq(MASTER_ROWS.map(r => r[key]).filter(Boolean)).sort((a,b)=>a.localeCompare(b));
+function optionsForColumn(colName){
+  return uniq(MASTER_ROWS.map(r => r[colName]).filter(Boolean)).sort((a,b)=>a.localeCompare(b));
 }
 
-function renderOptions(fieldIndex, filterText=""){
-  const wrap   = document.querySelector(`.field[data-index="${fieldIndex}"]`);
-  const list   = wrap.querySelector(".options");
-  const values = optionsForField(fieldIndex)
+function renderOptions(fieldIndex, colName, type, filterText=""){
+  const wrap = document.querySelector(`.field[data-index="${fieldIndex}"]`);
+  const combo = wrap.querySelector(`.combo-row .combo:nth-child(${type==="attr"?1:2})`);
+  const list  = combo.querySelector(".options");
+
+  const values = optionsForColumn(colName)
     .filter(v => v.toLowerCase().includes(filterText.toLowerCase()));
+
   list.innerHTML = "";
   if(values.length===0){
     const empty = document.createElement("div");
@@ -137,46 +151,73 @@ function renderOptions(fieldIndex, filterText=""){
     list.appendChild(empty);
     return;
   }
+
   values.forEach(v=>{
     const item = document.createElement("div");
     item.tabIndex = 0;
     item.className = "opt";
     item.textContent = v;
     item.addEventListener("click", ()=>{
-      const key = FIELDS[fieldIndex].key;
-      selections[key] = v;
-      const btn = wrap.querySelector(".combo-btn .val");
-      btn.classList.remove("placeholder");
-      btn.textContent = v;
-      togglePanel(wrap.querySelector(".combo"), false);
-      refreshAllOptions();
+      selectValue(fieldIndex, colName, type, v);
+      togglePanel(combo,false);
     });
     list.appendChild(item);
   });
 }
 
-function filterOptionsList(fieldIndex, q){ renderOptions(fieldIndex, q); }
+function selectValue(fieldIndex, colName, type, value){
+  const f = FIELDS[fieldIndex];
+
+  selections[colName] = value;
+
+  const wrap = document.querySelector(`.field[data-index="${fieldIndex}"]`);
+  const combo = wrap.querySelector(`.combo-row .combo:nth-child(${type==="attr"?1:2}) .combo-btn .val`);
+  combo.classList.remove("placeholder");
+  combo.textContent = value;
+
+  const row = MASTER_ROWS.find(r => r[colName] === value);
+  if(row){
+    if(type==="attr"){
+      selections[f.code] = row[f.code];
+      const codeBtn = wrap.querySelector(`.combo-row .combo:nth-child(2) .combo-btn .val`);
+      codeBtn.classList.remove("placeholder");
+      codeBtn.textContent = row[f.code];
+    } else {
+      selections[f.key] = row[f.key];
+      const attrBtn = wrap.querySelector(`.combo-row .combo:nth-child(1) .combo-btn .val`);
+      attrBtn.classList.remove("placeholder");
+      attrBtn.textContent = row[f.key];
+    }
+  }
+
+  refreshAllOptions();
+}
 
 function clearFromIndex(startIndex){
   for(let i=startIndex;i<FIELDS.length;i++){
-    const key = FIELDS[i].key;
-    delete selections[key];
+    const f = FIELDS[i];
+    delete selections[f.key];
+    delete selections[f.code];
     const wrap = document.querySelector(`.field[data-index="${i}"]`);
-    const btn  = wrap.querySelector(".combo-btn .val");
-    btn.classList.add("placeholder");
-    btn.textContent = `Select ${key}…`;
+    wrap.querySelectorAll(".combo-btn .val").forEach((btn,ix)=>{
+      btn.classList.add("placeholder");
+      btn.textContent = `Select ${ix===0?f.key:f.code}…`;
+    });
   }
   refreshAllOptions();
 }
 
 function refreshAllOptions(){
-  FIELDS.forEach((_,i)=>renderOptions(i,""));
+  FIELDS.forEach((f,i)=>{
+    renderOptions(i,f.key,"attr","");
+    renderOptions(i,f.code,"code","");
+  });
   updateProgress();
   makeFinalCode();
 }
 
 function updateProgress(){
-  const picked = FIELDS.filter(f => selections[f.key]).length;
+  const picked = FIELDS.filter(f => selections[f.key] || selections[f.code]).length;
   byId("progress").textContent = `${picked} / ${FIELDS.length} selected`;
 }
 
