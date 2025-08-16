@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select Valve</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+  <h1>Select Valve</h1>
+  <p class="sub">Choose the valve to generate FG code:</p>
+  <div class="grid" id="valveList"></div>
+</div>
+
+<script>
+const VALVES = ["Gate_Valve", "Globe_Valve", "Check_Valve"]; // Add more valves
+const valveList = document.getElementById("valveList");
+
+VALVES.forEach(v => {
+  const btn = document.createElement("button");
+  btn.className = "btn";
+  btn.textContent = v;
+  btn.onclick = () => {
+    localStorage.setItem("selectedValve", v);
+    window.location.href = "fg-generator.html"; // Go to generator page
+  };
+  valveList.appendChild(btn);
+});
+</script>
+</body>
+</html>
