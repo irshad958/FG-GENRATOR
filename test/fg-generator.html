@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FG Code Generator</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="container">
+  <h1>FG CODE GENERATOR</h1>
+  <h2 id="selectedValveTitle">Valve: —</h2>
+  <p class="sub">Pick from searchable dropdowns. All lists are always visible. Code length and live updates shown below.</p>
+
+  <div id="fields" class="grid"></div>
+
+  <div class="footer">
+    <button id="resetAll" class="btn" type="button">Reset all</button>
+    <div class="summary" id="progress">0 / 11 selected</div>
+  </div>
+
+  <div class="code-box">
+    <div class="code" id="finalCode">—</div>
+    <button id="copyBtn" class="btn" type="button" disabled>Copy code</button>
+    <span id="codeInfo" class="hint"></span>
+  </div>
+  <div id="globalError" class="error" style="display:none"></div>
+</div>
+<script src="fg-script.js"></script>
+</body>
+</html>
