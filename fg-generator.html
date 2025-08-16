@@ -8,14 +8,18 @@
 </head>
 <body>
 <div class="container">
-  <h1>FG CODE GENERATOR</h1>
+  <header class="header row">
+    <h1>FG CODE GENERATOR</h1>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+  </header>
+
   <h2 id="selectedValveTitle">Valve: —</h2>
   <p class="sub">Pick from searchable dropdowns. All lists are always visible. Code length and live updates shown below.</p>
 
   <div id="fields" class="grid"></div>
 
   <div class="footer">
-    <button id="resetAll" class="btn" type="button">Reset all</button>
+    <button id="resetAll" class="btn danger" type="button">Reset all</button>
     <div class="summary" id="progress">0 / 11 selected</div>
   </div>
 
@@ -27,5 +31,18 @@
   <div id="globalError" class="error" style="display:none"></div>
 </div>
 <script src="fg-script.js"></script>
+<script>
+// THEME HANDLING
+function toggleTheme(){
+  const current = document.documentElement.dataset.theme || "light";
+  const next = current === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem("theme", next);
+}
+(function(){
+  const saved = localStorage.getItem("theme") || "light";
+  document.documentElement.dataset.theme = saved;
+})();
+</script>
 </body>
 </html>
